@@ -22,7 +22,7 @@ set -e
 
 list_guests ()
 {
-    getent passwd | grep '^guest-' | cut -d : -f 1
+    getent passwd | (grep '^guest-' || true) | cut -d : -f 1
 }
 numbers ()
 {
