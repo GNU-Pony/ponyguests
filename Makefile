@@ -98,6 +98,72 @@ ps: ponyguests.ps
 	mv obj/$@ $@
 
 
+.PHONY: install
+install: install-base install-info
+
+.PHONY: install-all
+install-all: install-base install-doc
+
+.PHONY: install-base
+install-base: install-code install-license
+
+.PHONY: install-code
+install-code: bin/ponyguests-make-guest bin/ponyguests-login
+	install -dm755 -- "$(DESTDIR)$(BINDIR)"
+	install -m755 -- bin/ponyguests-login "$(DESTDIR)$(BINDIR)/ponyguests-login"
+	install -m755 -- src/ponyguests-next-guest "$(DESTDIR)$(BINDIR)/ponyguests-next-guest"
+	install -dm755 -- "$(DESTDIR)$(SYSCONFDIR)/$(PKGNAME)"
+	install -m755 -- src/ponyguests-make-guest "$(DESTDIR)$(SYSCONFDIR)/$(PKGNAME)/ponyguests-make-guest"
+	install -m755 -- src/ponyguests-delete-guest "$(DESTDIR)$(SYSCONFDIR)/$(PKGNAME)/ponyguests-delete-guest"
+	install -dm755 -- "$(DESTDIR)$(DATADIR)/$(PKGNAME)"
+	install -m644 -- src/gates-of-tartaros "$(DESTDIR)$(DATADIR)/$(PKGNAME)/gates-of-tartaros"
+
+.PHONY: install-license
+install-license:
+	install -dm755 -- "$(DESTDIR)$(LICENSEDIR)/$(PKGNAME)"
+	install -m644 -- COPYING LICENSE "$(DESTDIR)$(LICENSEDIR)/$(PKGNAME)"
+
+.PHONY: install-doc
+install-doc: install-info install-pdf install-ps install-dvi
+
+.PHONY: install-info
+install-info: ponyguests.info
+	install -dm755 -- "$(DESTDIR)$(INFODIR)"
+	install -m644 -- $< "$(DESTDIR)$(INFODIR)/$(PKGNAME).info"
+
+.PHONY: install-pdf
+install-pdf: ponyguests.pdf
+	install -dm755 -- "$(DESTDIR)$(DOCDIR)"
+	install -m644 -- $< "$(DESTDIR)$(DOCDIR)/$(PKGNAME).pdf"
+
+.PHONY: install-ps
+install-ps: ponyguests.ps
+	install -dm755 -- "$(DESTDIR)$(DOCDIR)"
+	install -m644 -- $< "$(DESTDIR)$(DOCDIR)/$(PKGNAME).ps"
+
+.PHONY: install-dvi
+install-dvi: ponyguests.dvi
+	install -dm755 -- "$(DESTDIR)$(DOCDIR)"
+	install -m644 -- $< "$(DESTDIR)$(DOCDIR)/$(PKGNAME).dvi"
+
+
+.PHONY: uninstall
+uninstall:
+	-rm -- "$(DESTDIR)$(BINDIR)/ponyguests-login"
+	-rm -- "$(DESTDIR)$(BINDIR)/ponyguests-next-guest"
+	-rm -- "$(DESTDIR)$(SYSCONFDIR)/$(PKGNAME)/ponyguests-make-guest"
+	-rm -- "$(DESTDIR)$(SYSCONFDIR)/$(PKGNAME)/ponyguests-delete-guest"
+	-rmdir -- "$(DESTDIR)$(SYSCONFDIR)/$(PKGNAME)"
+	-rm -- "$(DESTDIR)$(DATADIR)/$(PKGNAME)/gates-of-tartaros"
+	-rmdir -- "$(DESTDIR)$(DATADIR)/$(PKGNAME)"
+	-rm -- "$(DESTDIR)$(LICENSEDIR)/$(PKGNAME)/COPYING"
+	-rm -- "$(DESTDIR)$(LICENSEDIR)/$(PKGNAME)/LICENSE"
+	-rmdir -- "$(DESTDIR)$(LICENSEDIR)/$(PKGNAME)"
+	-rm -- "$(DESTDIR)$(INFODIR)/$(PKGNAME).info"
+	-rm -- "$(DESTDIR)$(DOCDIR)/$(PKGNAME).pdf"
+	-rm -- "$(DESTDIR)$(DOCDIR)/$(PKGNAME).ps"
+	-rm -- "$(DESTDIR)$(DOCDIR)/$(PKGNAME).dvi"
+
 
 .PHONY: clean
 clean:
