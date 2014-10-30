@@ -51,6 +51,7 @@ bin/ponyguests-make-guest: src/ponyguests-make-guest
 	sed -i 's:@PROCDIR@:$(PROCDIR):g' $@
 	sed -i 's:@DEVDIR@:$(DEVDIR):g' $@
 	sed -i 's:@TMPDIR@:$(TMPDIR):g' $@
+	sed -i 's:@PKGNAME@:$(PKGNAME):g' $@
 
 bin/ponyguests-login: obj/ponyguests-login.o
 	@mkdir -p bin
@@ -112,7 +113,7 @@ install-code: bin/ponyguests-make-guest bin/ponyguests-login
 	install -m755 -- bin/ponyguests-login "$(DESTDIR)$(BINDIR)/ponyguests-login"
 	install -m755 -- src/ponyguests-next-guest "$(DESTDIR)$(BINDIR)/ponyguests-next-guest"
 	install -dm755 -- "$(DESTDIR)$(SYSCONFDIR)/$(PKGNAME)"
-	install -m755 -- src/ponyguests-make-guest "$(DESTDIR)$(SYSCONFDIR)/$(PKGNAME)/ponyguests-make-guest"
+	install -m755 -- bin/ponyguests-make-guest "$(DESTDIR)$(SYSCONFDIR)/$(PKGNAME)/ponyguests-make-guest"
 	install -m755 -- src/ponyguests-delete-guest "$(DESTDIR)$(SYSCONFDIR)/$(PKGNAME)/ponyguests-delete-guest"
 	install -m644 -- src/gates-of-tartaros "$(DESTDIR)$(SYSCONFDIR)/$(PKGNAME)/gates-of-tartaros"
 

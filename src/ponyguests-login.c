@@ -24,6 +24,7 @@
 #include <sys/wait.h>
 #include <sys/types.h>
 #include <errno.h>
+#include <signal.h>
 
 
 #ifndef SYSCONFDIR
@@ -46,6 +47,8 @@ static pid_t do_login(char** args)
   
   if (pid == 0)
     {
+      if (signal(SIGHUP, SIG_DFL) == SIG_ERR)
+	return perror("signal"), exit(1), -1;
       execvp(*args, args);
       perror("execvp");
       exit(1);
@@ -122,6 +125,9 @@ int main(int argc, char** argv)
   
   if (prctl(PR_SET_CHILD_SUBREAPER, 1) == -1)
     return perror("prctl PR_SET_CHILD_SUBREAPER"), do_exit(username), 1;
+  
+  if (signal(SIGHUP, SIG_IGN) == SIG_ERR)
+    return perror("signal"), do_exit(username), 1;
   
   if (login_pid = do_login(args), login_pid == -1)
     return do_exit(username), 1;
