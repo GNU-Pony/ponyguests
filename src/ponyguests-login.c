@@ -26,6 +26,18 @@
 #include <errno.h>
 
 
+#ifndef SYSCONFDIR
+#define SYSCONFDIR  "/etc"
+#endif
+
+#ifndef PKGNAME
+#define PKGNAME  "ponyguests"
+#endif
+
+
+#define SCRIPTDIR  SYSCONFDIR "/" PKGNAME
+
+
 static pid_t do_login(char** args)
 {
   pid_t pid = fork();
@@ -72,13 +84,13 @@ static int do_guest(char* path, char* username)
 
 static int do_start(char* username)
 {
-  static char path[] = "/etc/ponyguests/ponyguests-make-guest";
+  static char path[] = SCRIPTDIR "/ponyguests-make-guest";
   return do_guest(path, username);
 }
 
 static int do_exit(char* username)
 {
-  static char path[] = "/etc/ponyguests/ponyguests-delete-guest";
+  static char path[] = SCRIPTDIR "/ponyguests-delete-guest";
   return do_guest(path, username);
 }
 

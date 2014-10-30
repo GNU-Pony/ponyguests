@@ -29,12 +29,12 @@ groups="games network guests"
 tty_groups="lp uucp lock video audio scanner"
 
 # A random password
-password="$(cat /proc/sys/kernel/random/uuid)"
+password="$(cat @PROCDIR@/sys/kernel/random/uuid)"
 
 
 # Check whether the guests is logging in via the TTY
-tty="$(tty 2>/dev/null || echo not a tty)"
-if echo "${tty}" | grep -Po '^/dev/tty[0-9]+$' 2>/dev/null; then
+tty="$(tty 2>@DEVDIR@/null || echo not a tty)"
+if echo "${tty}" | grep -Po '^@DEVDIR@/tty[0-9]+$' 2>@DEVDIR@/null; then
     groups="${tty_groups} ${groups}"
 fi
 
@@ -42,7 +42,7 @@ fi
 supplemental_groups=
 G=-G
 for group in $groups ; do
-    if getent group $group >/dev/null 2>/dev/null; then
+    if getent group $group >@DEVDIR@/null 2>@DEVDIR@/null; then
 	supplemental_groups=$supplemental_groups,$group
     fi
 done
@@ -55,7 +55,7 @@ fi
 
 # Create guest account
 useradd -c "Guest account" \
-	-d "/tmp/ponyquests/home/$(username)" \
+	-d "@TMPDIR@/.@PKGNAME@/home/$(username)" \
 	$G $supplemental_groups \
 	-m -U \
 	-p "${password}" \
