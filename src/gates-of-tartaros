@@ -28,7 +28,7 @@ _login_ponyguests ()
     if [ "${user}" = "guest" ]; then
 	user="$(ponyguests-next-guest)"
 	if [ ! $? = 0 ]; then
-	    sleep(2)
+	    sleep 2
 	    exit 1
 	fi
 	
