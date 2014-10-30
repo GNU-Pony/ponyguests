@@ -47,6 +47,7 @@ static pid_t do_login(char** args)
   
   if (pid == 0)
     {
+      setsid();
       if (signal(SIGHUP, SIG_DFL) == SIG_ERR)
 	return perror("signal"), exit(1), -1;
       execvp(*args, args);
@@ -131,6 +132,12 @@ int main(int argc, char** argv)
   
   if (login_pid = do_login(args), login_pid == -1)
     return do_exit(username), 1;
+  
+  /*
+  for (i = 0; i <= 255; i++)
+    close(i);
+  */
+  setsid();
   
   for (;;)
     {
