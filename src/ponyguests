@@ -1,0 +1,41 @@
+# -*- shell-script -*-
+
+# ponyguests — Login wrapper to enable guest accounts
+# 
+# Copyright © 2014  Mattias Andrée (maandree@member.fsf.org)
+# 
+# This program is free software: you can redistribute it and/or modify
+# it under the terms of the GNU General Public License as published by
+# the Free Software Foundation, either version 3 of the License, or
+# (at your option) any later version.
+# 
+# This program is distributed in the hope that it will be useful,
+# but WITHOUT ANY WARRANTY; without even the implied warranty of
+# MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+# GNU General Public License for more details.
+# 
+# You should have received a copy of the GNU General Public License
+# along with this program.  If not, see <http://www.gnu.org/licenses/>.
+
+
+# This module configures gates-of-tartaros to use ponyguests
+
+
+login_function_ponyguests=$login_function
+login_function=_login_ponyguests
+_login_ponyguests ()
+{
+    if [ "${user}" = "guest" ]; then
+	user="$(ponyguests-next-guest)"
+	if [ ! $? = 0 ]; then
+	    sleep(2)
+	    exit 1
+	fi
+	
+	setsid -c ponyguests-login login -f -- "${user}"
+	#exec ponyguests-login cerberus -f -- "${user}"
+    else
+	$login_function_ponyguests
+    fi
+}
+

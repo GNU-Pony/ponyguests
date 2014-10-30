@@ -1,0 +1,26 @@
+RUNTIME DEPENDENCIES:
+
+	sh
+	coreutils
+	grep
+	sed
+	bc
+	shadow
+	linux>=3.4
+	glibc
+
+
+BUILD DEPENDENCIES:
+
+	make
+	coreutils
+	linux-api-headers>=3.4
+	glibc
+	gcc
+
+
+INSTALL DEPENDENCIES:
+
+	make
+	coreutils
+
