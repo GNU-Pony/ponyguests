@@ -36,8 +36,14 @@ DEFS = SYSCONFDIR PKGNAME
 FLAGS = $(OPTIMISE) -std=$(STD) $(WARN) $(foreach D,$(DEFS),-D'$(D)="$($(D))"')
 
 
+.PHONY: default
+default: base info
+
 .PHONY: all
-all: bin/ponyguests-make-guest bin/ponyguests-login
+all: base doc
+
+.PHONY: base
+base: bin/ponyguests-make-guest bin/ponyguests-login
 
 bin/ponyguests-make-guest: src/ponyguests-make-guest
 	@mkdir -p bin
@@ -53,6 +59,44 @@ bin/ponyguests-login: obj/ponyguests-login.o
 obj/ponyguests-login.o: src/ponyguests-login.c
 	@mkdir -p obj
 	$(CC) $(FLAGS) $(CFLAGS) $(CPPFLAGS) -c -o $@ $<
+
+.PHONY: doc
+doc: info pdf ps dvi
+
+obj/fdl.texinfo: info/fdl.texinfo
+	@mkdir -p obj
+	cp $< $@
+
+obj/ponyguests.texinfo: info/ponyguests.texinfo
+	@mkdir -p obj
+	cp $< $@
+	sed -i 's:^\(@set DATADIR \).*$$:\1 $(DATADIR):' $@
+	sed -i 's:^\(@set SYSCONFDIR \).*$$:\1 $(SYSCONFDIR):' $@
+	sed -i 's:^\(@set PKGNAME \).*$$:\1 $(PKGNAME):' $@
+
+.PHONY: info
+info: ponyguests.info
+%.info: obj/%.texinfo obj/fdl.texinfo
+	makeinfo $<
+
+.PHONY: pdf
+pdf: ponyguests.pdf
+%.pdf: obj/%.texinfo obj/fdl.texinfo
+	cd obj ; yes X | texi2pdf ../$<
+	mv obj/$@ $@
+
+.PHONY: dvi
+dvi: ponyguests.dvi
+%.dvi: obj/%.texinfo obj/fdl.texinfo
+	cd obj ; yes X | $(TEXI2DVI) ../$<
+	mv obj/$@ $@
+
+.PHONY: ps
+ps: ponyguests.ps
+%.ps: obj/%.texinfo obj/fdl.texinfo
+	cd obj ; yes X | texi2pdf --ps ../$<
+	mv obj/$@ $@
+
 
 
 .PHONY: clean
