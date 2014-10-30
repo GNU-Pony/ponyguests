@@ -70,7 +70,6 @@ obj/fdl.texinfo: info/fdl.texinfo
 obj/ponyguests.texinfo: info/ponyguests.texinfo
 	@mkdir -p obj
 	cp $< $@
-	sed -i 's:^\(@set DATADIR \).*$$:\1 $(DATADIR):' $@
 	sed -i 's:^\(@set SYSCONFDIR \).*$$:\1 $(SYSCONFDIR):' $@
 	sed -i 's:^\(@set PKGNAME \).*$$:\1 $(PKGNAME):' $@
 
@@ -115,8 +114,7 @@ install-code: bin/ponyguests-make-guest bin/ponyguests-login
 	install -dm755 -- "$(DESTDIR)$(SYSCONFDIR)/$(PKGNAME)"
 	install -m755 -- src/ponyguests-make-guest "$(DESTDIR)$(SYSCONFDIR)/$(PKGNAME)/ponyguests-make-guest"
 	install -m755 -- src/ponyguests-delete-guest "$(DESTDIR)$(SYSCONFDIR)/$(PKGNAME)/ponyguests-delete-guest"
-	install -dm755 -- "$(DESTDIR)$(DATADIR)/$(PKGNAME)"
-	install -m644 -- src/gates-of-tartaros "$(DESTDIR)$(DATADIR)/$(PKGNAME)/gates-of-tartaros"
+	install -m644 -- src/gates-of-tartaros "$(DESTDIR)$(SYSCONFDIR)/$(PKGNAME)/gates-of-tartaros"
 
 .PHONY: install-license
 install-license:
@@ -153,9 +151,8 @@ uninstall:
 	-rm -- "$(DESTDIR)$(BINDIR)/ponyguests-next-guest"
 	-rm -- "$(DESTDIR)$(SYSCONFDIR)/$(PKGNAME)/ponyguests-make-guest"
 	-rm -- "$(DESTDIR)$(SYSCONFDIR)/$(PKGNAME)/ponyguests-delete-guest"
+	-rm -- "$(DESTDIR)$(SYSCONFDIR)/$(PKGNAME)/gates-of-tartaros"
 	-rmdir -- "$(DESTDIR)$(SYSCONFDIR)/$(PKGNAME)"
-	-rm -- "$(DESTDIR)$(DATADIR)/$(PKGNAME)/gates-of-tartaros"
-	-rmdir -- "$(DESTDIR)$(DATADIR)/$(PKGNAME)"
 	-rm -- "$(DESTDIR)$(LICENSEDIR)/$(PKGNAME)/COPYING"
 	-rm -- "$(DESTDIR)$(LICENSEDIR)/$(PKGNAME)/LICENSE"
 	-rmdir -- "$(DESTDIR)$(LICENSEDIR)/$(PKGNAME)"

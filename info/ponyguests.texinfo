@@ -9,7 +9,6 @@
 @finalout
 @c %**end of header
 
-@set DATADIR /usr/share
 @set SYSCONFDIR /etc
 @set PKGNAME ponyguests
 
@@ -68,7 +67,7 @@ in with dynamic guest accounts. @command{ponyguests}
 comes with an module for @command{gates-of-tartaros}.
 
 The @command{gates-of-tartaros} module is stored as
-@file{@value{DATADIR}/@value{PKGNAME}/gates-of-tartaros}.
+@file{@value{SYSCONFDIR}/@value{PKGNAME}/gates-of-tartaros}.
 
 @command{ponyguests} provides two scripts you may
 choose to customise.
