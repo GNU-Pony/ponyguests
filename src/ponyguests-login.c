@@ -133,12 +133,6 @@ int main(int argc, char** argv)
   if (login_pid = do_login(args), login_pid == -1)
     return do_exit(username), 1;
   
-  /*
-  for (i = 0; i <= 255; i++)
-    close(i);
-  */
-  setsid();
-  
   for (;;)
     {
       reaped = waitpid(-1, &status, 0);
