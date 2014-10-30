@@ -25,6 +25,7 @@
 #include <sys/types.h>
 #include <errno.h>
 #include <signal.h>
+#include <sys/ioctl.h>
 
 
 #ifndef SYSCONFDIR
@@ -47,9 +48,13 @@ static pid_t do_login(char** args)
   
   if (pid == 0)
     {
-      setsid();
+      /* Set to session leader. */
+      if (setsid() == -1)
+	return perror("setsid"), exit(1), -1;
+      /* We are not longer in the login wrapper, we may die of hangups now. */
       if (signal(SIGHUP, SIG_DFL) == SIG_ERR)
 	return perror("signal"), exit(1), -1;
+      /* Spawn the login process, or guest account management script. */
       execvp(*args, args);
       perror("execvp");
       exit(1);
@@ -59,6 +64,13 @@ static pid_t do_login(char** args)
   return pid;
 }
 
+/**
+ * Create or delete guest account
+ * 
+ * @parma   path      The pathname of the script to run
+ * @param   username  The name of the guest account
+ * @return            Zero on success, -1 on error
+ */
 static int do_guest(char* path, char* username)
 {
   char* args[3];
@@ -69,10 +81,12 @@ static int do_guest(char* path, char* username)
   args[1] = username;
   args[2] = NULL;
   
+  /* Call the script. */
   pid = do_login(args);
   if (pid == -1)
     return -1;
   
+  /* Wait for the script to exit. */
   for (;;)
     {
       reaped = waitpid(-1, &status, 0);
@@ -86,12 +100,24 @@ static int do_guest(char* path, char* username)
     }
 }
 
+/**
+ * Create guest account
+ * 
+ * @param   username  The name of the guest account
+ * @return            Zero on success, -1 on error
+ */
 static int do_start(char* username)
 {
   static char path[] = SCRIPTDIR "/ponyguests-make-guest";
   return do_guest(path, username);
 }
 
+/**
+ * Delete guest account
+ * 
+ * @param   username  The name of the guest account
+ * @return            Zero on success, -1 on error
+ */
 static int do_exit(char* username)
 {
   static char path[] = SCRIPTDIR "/ponyguests-delete-guest";
@@ -106,6 +132,7 @@ int main(int argc, char** argv)
   int i, status;
   pid_t login_pid, reaped;
   
+  /* Validate command line. */
   if (argc < 3)
     {
       printf("USAGE: %s <login-program> <arguments-for-login...>\n"
@@ -114,26 +141,33 @@ int main(int argc, char** argv)
       return 1;
     }
   
+  /* Parse command line. */
   username = argv[argc - 1];
   args = alloca((size_t)argc * sizeof(char*));
-  
   for (i = 1; i < argc; i++)
     args[i - 1] = argv[i];
   args[argc - 1] = NULL;
-  
+
+  /* Create guest account. */
   if (do_start(username) < 0)
     return 1;
   
+  /* All processes created by the guest should reparent to this processes,
+   * so we can make sure all programs the guest has started have exited
+   * before we remove the guest's account. */
   if (prctl(PR_SET_CHILD_SUBREAPER, 1) == -1)
     return perror("prctl PR_SET_CHILD_SUBREAPER"), do_exit(username), 1;
   
+  /* Do not die when the login process performs a virtual hangup.  */
   if (signal(SIGHUP, SIG_IGN) == SIG_ERR)
     return perror("signal"), do_exit(username), 1;
   
+  /* Spawn login process. */
   if (login_pid = do_login(args), login_pid == -1)
     return do_exit(username), 1;
   
-  for (;;)
+  /* Respawn the log if its exits without all other processes reaped. */
+  for (;;) /* FIXME why does this not resurrect the login process if there are remaining children? */
     {
       reaped = waitpid(-1, &status, 0);
       if (reaped == -1)
