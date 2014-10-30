@@ -137,12 +137,13 @@ int main(int argc, char** argv)
       else if (reaped == login_pid)
 	for (;;)
 	  {
-	    if (reaped = waitpid(-1, NULL, WNOHANG), reaped != -1)
+	    if (reaped = waitpid(-1, NULL, WNOHANG), reaped == 0)
 	      {
 		if (login_pid = do_login(args), login_pid == -1)
 		  return do_exit(username), 1;
 		break;
 	      }
+	    if (reaped != -1)     continue;
 	    if (errno == EINTR)   continue;
 	    if (errno == ECHILD)  return do_exit(username), status & 255;
 	    return perror("waitpid"), 1;
