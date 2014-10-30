@@ -162,6 +162,9 @@ int main(int argc, char** argv)
   if (signal(SIGHUP, SIG_IGN) == SIG_ERR)
     return perror("signal"), do_exit(username), 1;
   
+  /* TODO we should block more signals so the guest cannot
+  *       exit this program between login respawns. */
+  
   /* Spawn login process. */
   if (login_pid = do_login(args), login_pid == -1)
     return do_exit(username), 1;
