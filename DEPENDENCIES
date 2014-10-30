@@ -17,6 +17,7 @@ BUILD DEPENDENCIES:
 	linux-api-headers>=3.4
 	glibc
 	gcc
+	sed
 
 
 INSTALL DEPENDENCIES:
