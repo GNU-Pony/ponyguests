@@ -18,6 +18,8 @@ BUILD DEPENDENCIES:
 	glibc
 	gcc
 	sed
+	texinfo			(opt-out, for manuals)
+	texlive-core		(opt-in, for pdf, dvi and ps manuals)
 
 
 INSTALL DEPENDENCIES:
