@@ -1,4 +1,3 @@
-#define DEBUG
 /**
  * ponyguests — Login wrapper to enable guest accounts
  * 
