@@ -32,7 +32,7 @@ _login_ponyguests ()
 	    exit 1
 	fi
 	
-	setsid -c ponyguests-login login -f -- "${user}"
+	exec ponyguests-login login -f -- "${user}"
 	#exec ponyguests-login cerberus -f -- "${user}"
     else
 	$login_function_ponyguests
