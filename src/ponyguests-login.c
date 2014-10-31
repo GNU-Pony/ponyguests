@@ -40,6 +40,17 @@
 #define SCRIPTDIR  SYSCONFDIR "/" PKGNAME
 
 
+/**
+ * The guest should not be able to kill this program with the keyboard,
+ * nor should the login process kill it when it performs a virtual hangup.
+ */
+#ifdef DEBUG
+# define LIST_SOME_DEADLY_SIGNALS  X(SIGHUP)
+#else
+# define LIST_SOME_DEADLY_SIGNALS  X(SIGABRT) X(SIGHUP) X(SIGINT) X(SIGQUIT) X(SIGTERM)
+#endif
+
+
 static pid_t do_login(char** args)
 {
   pid_t pid = fork();
@@ -48,12 +59,14 @@ static pid_t do_login(char** args)
   
   if (pid == 0)
     {
+      prctl(PR_SET_CHILD_SUBREAPER, 0); /* just to be sure. */
       /* Set to session leader. */
       if (setsid() == -1)
 	return perror("setsid"), exit(1), -1;
-      /* We are not longer in the login wrapper, we may die of hangups now. */
-      if (signal(SIGHUP, SIG_DFL) == SIG_ERR)
-	return perror("signal"), exit(1), -1;
+      /* We are not longer in the login wrapper, we may die of signals now. */
+#define X(S)  if (signal(S, SIG_DFL) == SIG_ERR)  return perror("signal"), exit(1), -1;
+      LIST_SOME_DEADLY_SIGNALS
+#undef X
       /* Spawn the login process, or guest account management script. */
       execvp(*args, args);
       perror("execvp");
@@ -158,12 +171,11 @@ int main(int argc, char** argv)
   if (prctl(PR_SET_CHILD_SUBREAPER, 1) == -1)
     return perror("prctl PR_SET_CHILD_SUBREAPER"), do_exit(username), 1;
   
-  /* Do not die when the login process performs a virtual hangup.  */
-  if (signal(SIGHUP, SIG_IGN) == SIG_ERR)
-    return perror("signal"), do_exit(username), 1;
-  
-  /* TODO we should block more signals so the guest cannot
-  *       exit this program between login respawns. */
+  /* Do not die when the login process performs a virtual hangup,
+   * nor should the guest be able to kill this process. */
+#define X(S)  if (signal(S, SIG_IGN) == SIG_ERR)  return perror("signal"), do_exit(username), -1;
+  LIST_SOME_DEADLY_SIGNALS
+#undef X
   
   /* Spawn login process. */
   if (login_pid = do_login(args), login_pid == -1)
