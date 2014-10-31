@@ -1,3 +1,4 @@
+#define DEBUG
 /**
  * ponyguests — Login wrapper to enable guest accounts
  * 
@@ -38,7 +39,6 @@
 
 
 #define SCRIPTDIR  SYSCONFDIR "/" PKGNAME
-
 
 /**
  * The guest should not be able to kill this program with the keyboard,
