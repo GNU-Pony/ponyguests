@@ -153,10 +153,11 @@ static int is_owned_by_uid(const char* restrict pid, const char* restrict uid)
   size_t ptr = 0;
   int fd;
   char* p;
+  char* q;
   
   sprintf(path, "%s/%s/status", PROCDIR, pid);
   if (fd = open(path, O_RDONLY), fd < 0)  return 0;
-
+  
   content[ptr++] = '\n';
   for (;;)
     {
@@ -167,6 +168,7 @@ static int is_owned_by_uid(const char* restrict pid, const char* restrict uid)
     }
   close(fd);
   
+  /* Check real user. */
   if (p = strstr(content, "\nUid:"), p == NULL)  return 0;
   p += strlen("\nUid:");
   while (*p && ((*p == ' ') || (*p == '\t')))    p++;
@@ -174,6 +176,13 @@ static int is_owned_by_uid(const char* restrict pid, const char* restrict uid)
   if (strstr(p, uid) != p)                       return 0;
   p += strlen(uid);
   if ((*p != ' ') && (*p != '\t'))               return 0;
+  
+  /* Lets pretend zombies are not real. */
+  if (p = strstr(content, "\nState:"), p == NULL)  return 0;
+  p += strlen("\nState:");
+  if (q = strchr(p, '\n'), q == NULL)              return 0;
+  while (*p && ((*p == ' ') || (*p == '\t')))      p++;
+  if ((*p == '\0') || (*p == 'Z'))                 return 0;
   
   return 1;
 }
