@@ -195,6 +195,7 @@ int main(int argc, char** argv)
 	  {
 	    if (reaped = waitpid(-1, NULL, WNOHANG), reaped == 0)
 	      {
+		fprintf(stderr, "%s\n", "There are still programs running.");
 		if (login_pid = do_login(args), login_pid == -1)
 		  return do_exit(username), 1;
 		break;
