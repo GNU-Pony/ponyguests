@@ -32,7 +32,7 @@ WARN = -Wall -Wextra -pedantic -Wdouble-promotion -Wformat=2 -Winit-self -Wmissi
        -fstack-usage -funsafe-loop-optimizations -Wshadow -Wredundant-decls -Winline -Wcast-qual     \
        -Wsign-conversion -Wstrict-overflow=5 -Wconversion -Wsuggest-attribute=pure -Wswitch-default  \
        -Wstrict-aliasing=1 -fstrict-overflow -Wfloat-equal -Waggregate-return
-DEFS = SYSCONFDIR PKGNAME
+DEFS = PROCDIR SYSCONFDIR PKGNAME
 FLAGS = $(OPTIMISE) -std=$(STD) $(WARN) $(foreach D,$(DEFS),-D'$(D)="$($(D))"')
 
 

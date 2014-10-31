@@ -26,8 +26,16 @@
 #include <sys/types.h>
 #include <errno.h>
 #include <signal.h>
-#include <sys/ioctl.h>
+#include <stdint.h>
+#include <dirent.h>
+#include <string.h>
+#include <fcntl.h>
+#include <pwd.h>
 
+
+#ifndef PROCDIR
+#define PROCDIR  "/proc"
+#endif
 
 #ifndef SYSCONFDIR
 #define SYSCONFDIR  "/etc"
@@ -138,6 +146,74 @@ static int do_exit(char* username)
 }
 
 
+static int is_owned_by_uid(const char* restrict pid, const char* restrict uid)
+{
+  char path[1 << 10];
+  char content[4 << 10];
+  ssize_t got;
+  size_t ptr = 0;
+  int fd;
+  char* p;
+  
+  sprintf(path, "%s/%s/status", PROCDIR, pid);
+  if (fd = open(path, O_RDONLY), fd < 0)  return 0;
+
+  content[ptr++] = '\n';
+  for (;;)
+    {
+      got = read(fd, content + ptr, sizeof(content) - ptr * sizeof(char));
+      if (got <= 0)
+	break;
+      ptr += (size_t)got;
+    }
+  close(fd);
+  
+  if (p = strstr(content, "\nUid:"), p == NULL)  return 0;
+  p += strlen("\nUid:");
+  while (*p && ((*p == ' ') || (*p == '\t')))    p++;
+  if (*p == '\0')                                return 0;
+  if (strstr(p, uid) != p)                       return 0;
+  p += strlen(uid);
+  if ((*p != ' ') && (*p != '\t'))               return 0;
+  
+  return 1;
+}
+
+
+static void ukillall(const char* restrict username, int signo)
+{
+  char uid[2 + 3 * sizeof(uid_t)];
+  struct passwd* pwd;
+  DIR* dir;
+  struct dirent* file;
+  int killed = 1;
+  uid_t uid_;
+  
+  if (pwd = getpwnam(username), pwd == NULL)  return;
+  if (dir = opendir(PROCDIR),   dir == NULL)  return;
+  
+  uid_ = pwd->pw_uid;
+  sprintf(uid, "%ji", (intmax_t)uid_);
+  
+  while (killed)
+    for (killed = 0; (file = readdir(dir)) != NULL;)
+      {
+	char* filename = file->d_name;
+	pid_t pid;
+	if ((filename == NULL) || (*filename == '\0'))
+	  continue;
+	for (; *filename; filename++)
+	  if ((*filename < '0') || ('9' < *filename))
+	    goto next;
+	if (pid = (pid_t)atoll(file->d_name), pid <= 1)  continue;
+	if (is_owned_by_uid(file->d_name, uid) == 0)     continue;
+	killed = 1;
+	kill(pid, signo);
+      next:;
+      }
+}
+
+
 int main(int argc, char** argv)
 {
   char* username;
@@ -165,24 +241,25 @@ int main(int argc, char** argv)
   if (do_start(username) < 0)
     return 1;
   
-  /* All processes created by the guest should reparent to this processes,
-   * so we can make sure all programs the guest has started have exited
-   * before we remove the guest's account. */
-  if (prctl(PR_SET_CHILD_SUBREAPER, 1) == -1)
-    return perror("prctl PR_SET_CHILD_SUBREAPER"), do_exit(username), 1;
-  
   /* Do not die when the login process performs a virtual hangup,
    * nor should the guest be able to kill this process. */
 #define X(S)  if (signal(S, SIG_IGN) == SIG_ERR)  return perror("signal"), do_exit(username), -1;
   LIST_SOME_DEADLY_SIGNALS
 #undef X
   
+  /* Stop the guest's processes form being reparent to lower subreaper (like PID 1).
+   * This is do so that we do not accidentally fill other user's process because of
+   * race condition between checking the process's owner and killing it. The process
+   * get reaped and the PID reused between to two events. */
+  if (prctl(PR_SET_CHILD_SUBREAPER, 1) == -1)
+    return perror("prctl PR_SET_CHILD_SUBREAPER"), do_exit(username), 1;
+  
   /* Spawn login process. */
   if (login_pid = do_login(args), login_pid == -1)
     return do_exit(username), 1;
   
-  /* Respawn the log if its exits without all other processes reaped. */
-  for (;;) /* FIXME why does this not resurrect the login process if there are remaining children? */
+  /* Wait for the login process to exit, and then fill all remaining processes. */
+  for (;;)
     {
       reaped = waitpid(-1, &status, 0);
       if (reaped == -1)
@@ -191,20 +268,10 @@ int main(int argc, char** argv)
 	  if (errno != EINTR)   return perror("waitpid"), 1;
 	}
       else if (reaped == login_pid)
-	for (;;)
-	  {
-	    if (reaped = waitpid(-1, NULL, WNOHANG), reaped == 0)
-	      {
-		fprintf(stderr, "%s\n", "There are still programs running.");
-		if (login_pid = do_login(args), login_pid == -1)
-		  return do_exit(username), 1;
-		break;
-	      }
-	    if (reaped != -1)     continue;
-	    if (errno == EINTR)   continue;
-	    if (errno == ECHILD)  return do_exit(username), status & 255;
-	    return perror("waitpid"), 1;
-	  }
+	{
+	  ukillall(username, SIGKILL);
+	  return do_exit(username), status & 255;
+	}
     }
 }
 
